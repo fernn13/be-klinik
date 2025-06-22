@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reservasi;
+use App\Models\Antrian;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +16,19 @@ class ReservasiController extends Controller
     {
         //dd($request->all());
         try {
-            $vaData = DB::table('pasien_reservasi')
-                ->select('id', 'no_rm', 'nama', 'no_ktp', 'tgl_reservasi', 'kode_kunjungan', 'ruangan', 'keluhan')
-                ->orderByDesc('created_at')
+            $vaData = DB::table('pasien_reservasi as r')
+                ->leftJoin('pasien_pendaftaran as p', 'p.no_rm', '=', 'r.no_rm')
+                ->select([
+                    'r.id',
+                    'r.no_rm',
+                    'p.no_ktp',
+                    'p.nama',
+                    'r.tgl_reservasi',
+                    'r.kode_kunjungan',
+                    'r.ruangan',
+                    'r.keluhan',
+                ])
+                ->orderByDesc('r.created_at')
                 ->get()
                 ->map(function ($item) {
                     $item->tgl_reservasi = Carbon::parse($item->tgl_reservasi)
@@ -25,6 +36,7 @@ class ReservasiController extends Controller
                         ->format('d/m/Y H:i:s');
                     return $item;
                 });
+
 
             return response()->json([
                 'status' => self::$status['SUKSES'],
@@ -59,26 +71,13 @@ class ReservasiController extends Controller
 
     public function store(Request $request)
     {
-
         try {
-
-            // Generate no_rm otomatis
             $kode_kunjungan = $this->generateNomorRM();
 
-            // Tambahkan no_rm ke request data
-            $data = $request->all();
-            $data['kode_kunjungan'] = $kode_kunjungan;
-
-            $data['tgl_reservasi'] = Carbon::parse($request->tgl_reservasi)->format('Y-m-d H:i:s');
-            
-            // Validasi data (tanpa validasi unique karena no_rm sudah dijamin unik)
-            $vaValidator = Validator::make($data, [
-                'no_rm' => 'required|string',
-                'nama' => 'required|string|max:100',
-                'no_ktp' => 'nullable|string|max:30',
+            $vaValidator = Validator::make($request->all(), [
+                'no_rm' => 'required|string|exists:pasien_pendaftaran,no_rm',
                 'tgl_reservasi' => 'required|date',
-                'kode_kunjungan' => 'required|unique:pasien_reservasi,kode_kunjungan',
-                'ruangan' => 'nullable|string|max:50',
+                'ruangan' => 'required|string|max:50',
                 'keluhan' => 'required|string',
             ]);
 
@@ -90,23 +89,61 @@ class ReservasiController extends Controller
                 ], 422);
             }
 
-            Reservasi::create($data);
+            $reservasi = Reservasi::create([
+                'no_rm' => $request->no_rm,
+                'tgl_reservasi' => Carbon::parse($request->tgl_reservasi),
+                'kode_kunjungan' => $kode_kunjungan,
+                'ruangan' => $request->ruangan,
+                'keluhan' => $request->keluhan,
+            ]);
+
+            // ============ INSERT OTOMATIS KE ANTRIAN ===============
+            $ruangan = trim($reservasi->ruangan);
+            $words = preg_split('/\s+/', $ruangan);
+            $prefix = '';
+            foreach ($words as $w) {
+                $prefix .= strtoupper(mb_substr(preg_replace('/[^A-Za-z]/', '', $w), 0, 1));
+                if (strlen($prefix) >= 2)
+                    break;
+            }
+            if (strlen($prefix) === 1) {
+                $prefix .= strtoupper(mb_substr($words[0], 1, 1) ?: 'X');
+            }
+
+            $today = Carbon::today()->toDateString();
+            $last = DB::table('antrian_pasien')
+                ->where('ruangan', $ruangan)
+                ->whereDate('waktu_masuk', $today)
+                ->orderByDesc('no_antrian')
+                ->first();
+
+            $next = (!$last || !preg_match('/\d+$/', $last->no_antrian, $m))
+                ? 1
+                : intval($m[0]) + 1;
+
+            $no_antrian = $prefix . str_pad($next, 4, '0', STR_PAD_LEFT);
+
+            Antrian::create([
+                'reservasi_id' => $reservasi->id,
+                'no_antrian' => $no_antrian,
+                'ruangan' => $ruangan,
+                'waktu_masuk' => now(),
+                'status' => 'menunggu',
+            ]);
 
             return response()->json([
                 'status' => self::$status['SUKSES'],
-                'message' => 'Data pasien berhasil disimpan',
+                'message' => 'Data reservasi & antrian tersimpan',
                 'datetime' => now()
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => self::$status['BAD_REQUEST'],
-                'message' => 'Terjadi kesalahan saat simpan data: ' . $th->getMessage(),
+                'message' => 'Gagal simpan: ' . $th->getMessage(),
                 'datetime' => now()
             ], 400);
         }
     }
-
-
 
     public function update(Request $request)
     {

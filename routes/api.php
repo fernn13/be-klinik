@@ -8,7 +8,9 @@ use App\Http\Controllers\api\auth\LoginController;
 use App\Http\Controllers\api\master\UserController;
 use App\Http\Controllers\PendaftaranController;
 use App\Http\Controllers\ReservasiController;
-use App\Models\Reseravasi;
+use App\Http\Controllers\AntrianController;
+use App\Http\Controllers\PemeriksaanController;
+use App\Http\Controllers\DiagnosaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +22,13 @@ use App\Models\Reseravasi;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+
+// Master Diagnosa
+Route::get('/diagnosa', [DiagnosaController::class, 'index']);
+Route::post('/diagnosa', [DiagnosaController::class, 'store']);
+Route::delete('/diagnosa/{id}', [DiagnosaController::class, 'destroy']);
+
 //login
 Route::post('/login', [LoginController::class, 'login']);
 
@@ -34,6 +43,20 @@ Route::get('/reservasi/get', [ReservasiController::class, 'data']);
 Route::post('/reservasi/store', [ReservasiController::class, 'store']);
 //Route::put('/pendaftaran/update', [ReservasiController::class, 'update']);
 Route::delete('/reservasi/delete', [ReservasiController::class, 'delete']);
+
+//Antrian Pasien
+Route::prefix('antrian')->group(function () {
+    Route::get('/',          [AntrianController::class, 'index']);         // GET  /api/antrian
+    Route::post('/store',    [AntrianController::class, 'store']);         // POST /api/antrian/store
+    Route::patch('/{id}',    [AntrianController::class, 'updateStatus']);  // PATCH /api/antrian/{id}
+});
+
+//Pemeriksaan Pasien
+Route::get('/pemeriksaan', [PemeriksaanController::class, 'index']);
+Route::get('/pemeriksaan/{id}', [PemeriksaanController::class, 'show']);
+
+
+
 
 
 Route::middleware(['check.token'])->group(function () {   
