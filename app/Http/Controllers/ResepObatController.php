@@ -33,26 +33,48 @@ class ResepObatController extends Controller
     // Detail resep berdasarkan antrian_id
     public function show($id)
     {
-        $data = DB::table('pemeriksaan')
-            ->leftJoin('pasien', 'pasien.id', '=', 'pemeriksaan.pasien_id')
-            ->leftJoin('diagnosa', 'diagnosa.id', '=', 'pemeriksaan.diagnosa_id')
-            ->leftJoin('resep_obat', 'resep_obat.pemeriksaan_id', '=', 'pemeriksaan.id')
+        // Ambil data pasien dan pemeriksaan
+        $pasien = DB::table('resep_obat as ro')
+            ->leftJoin('antrian_pasien as a', 'a.id', '=', 'ro.antrian_id')
+            ->leftJoin('pasien_reservasi as r', 'r.id', '=', 'a.reservasi_id')
+            ->leftJoin('pasien_pendaftaran as p', 'p.no_rm', '=', 'r.no_rm')
+            ->leftJoin('pemeriksaan_pasien as pr', 'pr.antrian_id', '=', 'a.id')
+            ->leftJoin('master_diagnosa as d', 'd.id', '=', 'pr.diagnosa_id')
             ->select(
-                'pemeriksaan.*',
-                'pasien.nama',
-                'pasien.no_rm',
-                'diagnosa.nama as diagnosa_nama',
-                'resep_obat.resep'
+                'p.nama',
+                'r.keluhan',
+                'r.no_rm',
+                'r.tgl_reservasi',
+                'pr.tensi',
+                'pr.tindakan',
+                'd.nama as diagnosa_nama'
             )
-            ->where('pemeriksaan.id', $id)
+            ->where('ro.id', $id)
             ->first();
 
-        if (!$data) {
+        // Ambil detail resep obat
+        $resep = DB::table('resep_obat as ro')
+            ->leftJoin('obat as o', 'o.id', '=', 'ro.obat_id')
+            ->select(
+                'ro.dosis',
+                'ro.frekuensi as aturan',
+                'ro.jumlah',
+                'o.nama_obat',
+                'o.harga_jual'
+            )
+            ->where('ro.id', $id)
+            ->get();
+
+        if (!$pasien) {
             return response()->json(['message' => 'Data tidak ditemukan'], 404);
         }
 
-        return response()->json(['data' => $data]);
+        return response()->json([
+            'status' => 'success',
+            'data' => array_merge((array) $pasien, ['resep' => $resep])
+        ]);
     }
+
 
 
     // Simpan resep baru dan update status antrian menjadi selesai

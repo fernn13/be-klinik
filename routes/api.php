@@ -13,6 +13,7 @@ use App\Http\Controllers\PemeriksaanController;
 use App\Http\Controllers\DiagnosaController;
 use App\Http\Controllers\ObatController;
 use App\Http\Controllers\ResepObatController;
+use App\Http\Controllers\PenebusanObatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,12 +80,17 @@ Route::post('/resep/{antrian_id}', [ResepObatController::class, 'store']);
 Route::delete('/resep/{antrian_id}', [ResepObatController::class, 'destroy']); // optional
 
 
+// Penebusan Obat
+Route::get('/penebusan-obat', [PenebusanObatController::class, 'index']);
+Route::get('/resep-obat/{id}', [PenebusanObatController::class, 'show']);
+Route::post('/penebusan-obat/lunas/{id}', [PenebusanObatController::class, 'updateStatus']);
+
+
 Route::middleware(['check.token'])->group(function () {   
     // User Manager
     Route::post('/user/get', [UserController::class, 'data']);
     Route::post('/user/store', [UserController::class, 'store']);
     Route::post('/user/update', [UserController::class, 'update']);
     Route::post('/user/delete', [UserController::class, 'delete']);
-    
 
 });
