@@ -27,6 +27,7 @@ class AntrianController extends Controller
                 'p.nama'
             )
             ->whereDate('a.waktu_masuk', $today)
+            ->orderByDesc('a.waktu_masuk')
             ->orderBy('a.ruangan')
             ->orderBy('a.no_antrian')
             ->get();
