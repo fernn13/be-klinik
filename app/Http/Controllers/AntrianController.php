@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class AntrianController extends Controller
 {
-    /* ─────────────────────────────────────────────
-       1. Tampilkan antrian hari ini
-    ───────────────────────────────────────────── */
+
     public function index()
     {
         $today = Carbon::today()->toDateString();
@@ -36,16 +34,14 @@ class AntrianController extends Controller
         return response()->json(['status' => 'success', 'data' => $rows]);
     }
 
-    /* ─────────────────────────────────────────────
-       2. Tambah pasien ke antrian
-    ───────────────────────────────────────────── */
+
     public function store(Request $request)
     {
         $request->validate([
             'reservasi_id' => 'required|integer|exists:pasien_reservasi,id',
         ]);
 
-        // ── Ambil data reservasi ───────────────────
+
         $reservasi = DB::table('pasien_reservasi')
             ->where('id', $request->reservasi_id)
             ->first();
@@ -57,8 +53,7 @@ class AntrianController extends Controller
             );
         }
 
-        // ── Generate nomor antrian ─────────────────
-        // ── Generate nomor antrian ───────────────
+
         $ruangan = trim($reservasi->ruangan);
 
         /* Ambil huruf pertama dari dua kata pertama */
@@ -94,7 +89,7 @@ class AntrianController extends Controller
         }
         $no_antrian = $prefix . str_pad($next, 4, '0', STR_PAD_LEFT); // PU0001 …
 
-        // ── Simpan ─────────────────────────────────
+
         $row = Antrian::create([
             'reservasi_id' => $reservasi->id,
             'no_antrian' => $no_antrian,
@@ -109,9 +104,18 @@ class AntrianController extends Controller
         ], 201);
     }
 
-    /* ─────────────────────────────────────────────
-       3. Ubah status (optional)
-    ───────────────────────────────────────────── */
+    public function panggil($id)
+    {
+        DB::table('antrian')->where('id', $id)->update(['status' => 'dipanggil']);
+
+        // jika ingin langsung redirect ke form pemeriksaan
+        return response()->json([
+            'message' => 'Pasien dipanggil',
+            'id' => $id
+        ]);
+    }
+
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([

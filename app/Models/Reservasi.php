@@ -9,16 +9,21 @@ class Reservasi extends Model
 {
     use HasFactory;
 
-    protected $table ='pasien_reservasi';
-    protected $primaryKey='id';
+    protected $table = 'pasien_reservasi';
+    protected $primaryKey = 'id';
     protected $guarded = [];
-    protected $keyType='string';
+    protected $keyType = 'string';
     public $timestamps = true;
-protected $casts = [
-    'tgl_reservasi' => 'datetime:Y-m-d H:i:s',
-];
+    protected $casts = [
+        'tgl_reservasi' => 'datetime:Y-m-d H:i:s',
+    ];
 
-    protected $fillable =[
+    public function pendaftaran()
+    {
+        return $this->belongsTo(Pendaftaran::class, 'no_rm', 'no_rm');
+    }
+
+    protected $fillable = [
         'id',
         'no_rm',
         'nama',

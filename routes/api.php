@@ -11,6 +11,8 @@ use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\AntrianController;
 use App\Http\Controllers\PemeriksaanController;
 use App\Http\Controllers\DiagnosaController;
+use App\Http\Controllers\ObatController;
+use App\Http\Controllers\ResepObatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,8 +28,19 @@ use App\Http\Controllers\DiagnosaController;
 
 // Master Diagnosa
 Route::get('/diagnosa', [DiagnosaController::class, 'index']);
+Route::put('/diagnosa/update', [DiagnosaController::class, 'update']);
 Route::post('/diagnosa', [DiagnosaController::class, 'store']);
 Route::delete('/diagnosa/{id}', [DiagnosaController::class, 'destroy']);
+Route::post('/diagnosa/import', [DiagnosaController::class, 'import']);
+
+// Obat
+Route::prefix('obat')->group(function () {
+    Route::get('/', [ObatController::class, 'index']);
+    Route::post('/', [ObatController::class, 'store']);
+    Route::put('/update', [ObatController::class, 'update']);
+    Route::delete('/{id}', [ObatController::class, 'destroy']);
+    Route::post('/import', [ObatController::class, 'import']);
+});
 
 //login
 Route::post('/login', [LoginController::class, 'login']);
@@ -35,13 +48,16 @@ Route::post('/login', [LoginController::class, 'login']);
 //pendaftaran
 Route::get('/pendaftaran/get', [PendaftaranController::class, 'data']);
 Route::post('/pendaftaran/store', [PendaftaranController::class, 'store']);
-//Route::update('/pendaftaran/update', [PendaftaranController::class, 'update']);
+Route::post('/pendaftaran/update', [PendaftaranController::class, 'update']);
 Route::delete('/pendaftaran/delete', [PendaftaranController::class, 'delete']);
+Route::get('pendaftaran/show', [PendaftaranController::class, 'show']);
+
 
 //reservasi
 Route::get('/reservasi/get', [ReservasiController::class, 'data']);
 Route::post('/reservasi/store', [ReservasiController::class, 'store']);
-//Route::put('/pendaftaran/update', [ReservasiController::class, 'update']);
+Route::post('/reservasi/update', [ReservasiController::class, 'update']);
+Route::get('/reservasi/show', [ReservasiController::class, 'show']);
 Route::delete('/reservasi/delete', [ReservasiController::class, 'delete']);
 
 //Antrian Pasien
@@ -54,9 +70,13 @@ Route::prefix('antrian')->group(function () {
 //Pemeriksaan Pasien
 Route::get('/pemeriksaan', [PemeriksaanController::class, 'index']);
 Route::get('/pemeriksaan/{id}', [PemeriksaanController::class, 'show']);
+Route::post('/pemeriksaan/{id}', [PemeriksaanController::class, 'store']);
 
-
-
+// Resep Obat
+Route::get('/resep', [ResepObatController::class, 'index']);
+Route::get('/resep/{antrian_id}', [ResepObatController::class, 'show']);
+Route::post('/resep/{antrian_id}', [ResepObatController::class, 'store']);
+Route::delete('/resep/{antrian_id}', [ResepObatController::class, 'destroy']); // optional
 
 
 Route::middleware(['check.token'])->group(function () {   

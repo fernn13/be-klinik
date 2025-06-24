@@ -102,64 +102,28 @@ class PendaftaranController extends Controller
         }
     }
 
+    public function show(Request $request)
+    {
+        $pendaftaran = Pendaftaran::find($request->id);
+        if (!$pendaftaran) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+        return response()->json(['data' => $pendaftaran], 200);
+    }
 
 
     public function update(Request $request)
     {
-        try {
-            $vaValidator = Validator::make($request->all(), [
-                'id' => 'required|exists:pasien_pendaftaran,id',
-                'nama' => 'required|max:100',
-                'no_rm' => 'required|max:50',
-                'tempat_lahir' => 'nullable|string|max:100',
-                'tgl_lahir' => 'nullable|date',
-                'jns_kelamin' => 'nullable|in:L,P',
-                'alamat' => 'nullable|string',
-                'no_tlp' => 'nullable|string|max:20',
-                'pendidikan' => 'nullable|string|max:50',
-                'pekerjaan' => 'nullable|string|max:50',
-                'no_ktp' => 'nullable|string|max:30',
-                'no_asuransi' => 'nullable|string|max:30',
-                'jns_asuransi' => 'nullable|string|max:50',
-            ], [
-                'required' => 'Kolom :attribute harus diisi.',
-                'exists' => 'Data tidak ditemukan.',
-                'max' => 'Kolom :attribute tidak boleh lebih dari :max karakter.',
-            ]);
-
-            if ($vaValidator->fails()) {
-                return response()->json([
-                    'status' => self::$status['BAD_REQUEST'],
-                    'message' => $vaValidator->errors()->first(),
-                    'datetime' => date('Y-m-d H:i:s')
-                ], 422);
-            }
-
-            $update = DB::table('pasien_pendaftaran')
-                ->where('id', $request->id)
-                ->update($request->except(['id']));
-
-            if ($update === 0) {
-                return response()->json([
-                    'status' => self::$status['GAGAL'],
-                    'message' => 'Gagal Update Data',
-                    'datetime' => date('Y-m-d H:i:s')
-                ], 400);
-            }
-
-            return response()->json([
-                'status' => self::$status['SUKSES'],
-                'message' => 'Berhasil Update Data',
-                'datetime' => date('Y-m-d H:i:s')
-            ], 200);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => self::$status['BAD_REQUEST'],
-                'message' => 'Terjadi Kesalahan Saat Proses Data: ' . $th->getMessage(),
-                'datetime' => date('Y-m-d H:i:s')
-            ], 400);
+        $pasien = Pendaftaran::find($request->id);
+        if (!$pasien) {
+            return response()->json(['message' => 'Pasien tidak ditemukan'], 404);
         }
+
+        $pasien->update($request->all());
+
+        return response()->json(['message' => 'Data pasien berhasil diupdate']);
     }
+
 
     public function delete(Request $request)
     {

@@ -145,23 +145,29 @@ class ReservasiController extends Controller
         }
     }
 
+    public function show(Request $request)
+    {
+        $id = $request->query('id');
+        $data = Reservasi::with('pendaftaran')->find($id);
+
+        if (!$data) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        return response()->json(['data' => $data], 200);
+    }
+
+
+
     public function update(Request $request)
     {
         try {
             $vaValidator = Validator::make($request->all(), [
-                'id' => 'required|exists:pasien_pendaftaran,id',
-                'nama' => 'required|max:100',
+                'id' => 'required|exists:pasien_reservasi,id',
                 'no_rm' => 'required|max:50',
-                'tempat_lahir' => 'nullable|string|max:100',
-                'tgl_lahir' => 'nullable|date',
-                'jns_kelamin' => 'nullable|in:L,P',
-                'alamat' => 'nullable|string',
-                'no_tlp' => 'nullable|string|max:20',
-                'pendidikan' => 'nullable|string|max:50',
-                'pekerjaan' => 'nullable|string|max:50',
-                'no_ktp' => 'nullable|string|max:30',
-                'no_asuransi' => 'nullable|string|max:30',
-                'jns_asuransi' => 'nullable|string|max:50',
+                'tgl_reservasi' => 'required|date',
+                'ruangan' => 'required|string|max:50',
+                'keluhan' => 'required|string',
             ], [
                 'required' => 'Kolom :attribute harus diisi.',
                 'exists' => 'Data tidak ditemukan.',
@@ -172,35 +178,41 @@ class ReservasiController extends Controller
                 return response()->json([
                     'status' => self::$status['BAD_REQUEST'],
                     'message' => $vaValidator->errors()->first(),
-                    'datetime' => Carbon::now()->format('d/m/Y H:i:s')
+                    'datetime' => now()
                 ], 422);
             }
 
-            $update = DB::table('pasien_pendaftaran')
+            $update = DB::table('pasien_reservasi')
                 ->where('id', $request->id)
-                ->update($request->except(['id']));
+                ->update([
+                    'no_rm' => $request->no_rm,
+                    'tgl_reservasi' => Carbon::parse($request->tgl_reservasi),
+                    'ruangan' => $request->ruangan,
+                    'keluhan' => $request->keluhan,
+                ]);
 
             if ($update === 0) {
                 return response()->json([
                     'status' => self::$status['GAGAL'],
                     'message' => 'Gagal Update Data',
-                    'datetime' => Carbon::now()->format('d/m/Y H:i:s')
+                    'datetime' => now()
                 ], 400);
             }
 
             return response()->json([
                 'status' => self::$status['SUKSES'],
                 'message' => 'Berhasil Update Data',
-                'datetime' => Carbon::now()->format('d/m/Y H:i:s')
+                'datetime' => now()
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => self::$status['BAD_REQUEST'],
-                'message' => 'Terjadi Kesalahan Saat Proses Data: ' . $th->getMessage(),
-                'datetime' => Carbon::now()->format('d/m/Y H:i:s')
+                'message' => 'Terjadi Kesalahan Saat Update: ' . $th->getMessage(),
+                'datetime' => now()
             ], 400);
         }
     }
+
 
     public function delete(Request $request)
     {
