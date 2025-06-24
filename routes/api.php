@@ -14,6 +14,7 @@ use App\Http\Controllers\DiagnosaController;
 use App\Http\Controllers\ObatController;
 use App\Http\Controllers\ResepObatController;
 use App\Http\Controllers\PenebusanObatController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,9 @@ use App\Http\Controllers\PenebusanObatController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// Dashboard
+Route::get('/dashboard-data', [DashboardController::class, 'getSummary']);
 
 
 // Master Diagnosa
